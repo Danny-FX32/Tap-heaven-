@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GoldTap Mining Offline</title>
+<style>
+  /* General body styling */
+  body {
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    margin: 0;
+    background: linear-gradient(135deg, #0d1b2a, #1b263b, #415a77, #778da9);
+    background-size: 400% 400%;
+    animation: gradientMove 15s ease infinite;
+    color: #f0f0f0;
+    text-align: center;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+  @keyframes gradientMove {
+    0% {background-position:0% 50%;}
+    50% {background-position:100% 50%;}
+    100% {background-position:0% 50%;}
+  }
+
+  h1 { margin: 20px 0; font-size: 42px; color: #ffd700; text-shadow: 2px 2px 6px rgba(0,0,0,0.6);}
+  h2 { color:#ffd700; font-size:28px; margin-bottom: 10px; }
+
+  /* Pages */
+  .page {
+    display: none;
+    width: 100%;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    animation: fadeIn 0.6s ease-in-out;
+  }
+  .active { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Forms */
+  form {
+    background: rgba(255,255,255,0.08);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+    width: 320px;
+    margin-bottom: 15px;
+  }
+  input {
+    margin: 10px 0;
+    padding: 12px;
+    width: 90%;
+    border: none;
+    border-radius: 8px;
+    outline: none;
+  }
+  button {
+    padding: 12px 25px;
+    margin-top: 10px;
+    border: none;
+    background: linear-gradient(90deg, #ffd700, #ff8c00);
+    color: #222;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 16px;
+  }
+  button:hover { transform: scale(1.05); background: linear-gradient(90deg, #ff8c00, #ffd700); }
+  a { color:#ffd700; text-decoration:none; font-weight:bold; }
+
+  /* Mining */
+  #coin { width:160px; cursor:pointer; margin:20px; transition: transform 0.1s; }
+  #coin:active { transform: scale(0.9); }
+  #coins { font-size: 28px; margin: 15px; }
+
+  #progressContainer {
+    width: 80%; max-width: 400px; height: 25px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 15px; margin: 15px auto;
+    box-shadow: inset 0 0 5px #000; overflow: hidden;
+  }
+  #progressBar {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg,#ffd700,#ff8c00,#ffd700);
+    border-radius: 15px;
+    box-shadow:0 0 10px gold,0 0 15px orange;
+    transition: width 0.3s ease;
+  }
+  #progressText { margin-top:5px; font-size:15px; color:#fff; }
+
+  #withdrawBtn { background:linear-gradient(90deg,#ff5722,#ff9800); color:white; }
+  #withdrawBtn:disabled { background:gray; cursor:not-allowed; }
+
+  /* Comments */
+  #commentOverlay {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: 95%;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 8px;
+    z-index: 9999;
+  }
+  .comment {
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: slideUpFade 3s forwards;
+  }
+  .comment img {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+  }
+  @keyframes slideUpFade {
+    0% { opacity: 0; transform: translateY(20px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-20px); }
+  }
+
+  /* Withdraw Modal */
+  #withdrawModal {
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.7);
+    z-index:10000;
+    justify-content:center;
+    align-items:center;
+    animation: fadeInModal 0.3s;
+  }
+  @keyframes fadeInModal { from{opacity:0;} to{opacity:1;} }
+  #withdrawModalContent {
+    background:#1b263b;
+    padding:25px;
+    border-radius:15px;
+    max-width:400px;
+    width:90%;
+    text-align:center;
+    color:#fff;
+    box-shadow:0 0 15px rgba(0,0,0,0.5);
+  }
+  #withdrawModalContent button {
+    margin-top:15px;
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    background:linear-gradient(90deg,#ff5722,#ff9800);
+    color:white;
+    cursor:pointer;
+    font-weight:bold;
+    transition:0.3s;
+  }
+  #withdrawModalContent button:hover { transform:scale(1.05); }
+</style>
+</head>
+<body>
+
+<h1>💰 GoldTap Mining</h1>
+
+<!-- Signup -->
+<div id="signupPage" class="page active">
+  <h2>Start Earning Today!</h2>
+  <form id="signupForm">
+    <input type="text" id="signupUser" placeholder="Username" required><br>
+    <input type="password" id="signupPass" placeholder="Password" required><br>
+    <button type="submit">Sign Up</button>
+  </form>
+  <p>Already have an account? <a href="#" onclick="showPage('loginPage')">Login</a></p>
+</div>
+
+<!-- Login -->
+<div id="loginPage" class="page">
+  <h2>Login</h2>
+  <form id="loginForm">
+    <input type="text" id="loginUser" placeholder="Username" required><br>
+    <input type="password" id="loginPass" placeholder="Password" required><br>
+    <button type="submit">Login</button>
+  </form>
+  <p>Don’t have an account? <a href="#" onclick="showPage('signupPage')">Signup</a></p>
+</div>
+
+<!-- Mining -->
+<div id="miningPage" class="page">
+  <h2>⛏ Tap the Coin to Mine!</h2>
+  <img id="coin" src="images/coin.png" alt="Coin">
+  <p id="coins">Coins: 0</p>
+  <div id="progressContainer"><div id="progressBar"></div></div>
+  <p id="progressText">0 / 40,000 coins</p>
+  <button id="withdrawBtn" disabled>Withdraw 40,000</button><br><br>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<!-- Comments -->
+<div id="commentOverlay"></div>
+
+<!-- Withdraw Modal -->
+<div id="withdrawModal">
+  <div id="withdrawModalContent">
+    <h2>🎉 Withdraw Details</h2>
+    <p>Hi <span id="modalUser"></span>!<br>
+       Your coins are ready to withdraw.<br><br>
+       <strong>Wallet/Bank Info:</strong><br>
+       Account: 8160131731<br>
+       Bank: Opay<br>
+       Address: 0x1234ABCD5678EFGH<br>
+       <strong>⚠️ Transfer 5000 to unlock withdrawal</strong>
+    </p>
+    <button onclick="closeWithdrawModal()">Close</button>
+  </div>
+</div>
+
+<script>
+const MAX_COINS = 40000;
+let currentUser = null;
+let data = null;
+
+const usernames = ["CryptoKing","GoldMiner99","LuckyUser","MinerJoe","RichieRich","CoinQueen"];
+const avatars = ["images/u1.png","images/u2.png","images/u3.png","images/u4.png"];
+const messages = ["just withdrew {amount} coins! 💰","This app is amazing! 🤑","I can't believe how fast I'm earning!","No one knows about this yet! 🤫","Feeling rich already!"];
+
+function showPage(pageId){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+}
+
+// Signup
+document.getElementById("signupForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  const user=document.getElementById("signupUser").value;
+  const pass=document.getElementById("signupPass").value;
+  if(localStorage.getItem(user)){ alert("⚠️ User exists!"); return; }
+  localStorage.setItem(user, JSON.stringify({password:pass,coins:0}));
+  alert("✅ Signup successful! Login now.");
+  showPage('loginPage');
+});
+
+// Login
+document.getElementById("loginForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  const user=document.getElementById("loginUser").value;
+  const pass=document.getElementById("loginPass").value;
+  const stored=localStorage.getItem(user);
+  if(!stored){ alert("⚠️ User not found!"); return; }
+  const obj=JSON.parse(stored);
+  if(obj.password!==pass){ alert("❌ Wrong password!"); return; }
+  currentUser=user; data=obj; showPage('miningPage'); updateDisplay();
+});
+
+// Mining
+const coinImg=document.getElementById("coin");
+const coinDisplay=document.getElementById("coins");
+const withdrawBtn=document.getElementById("withdrawBtn");
+const progressBar=document.getElementById("progressBar");
+const progressText=document.getElementById("progressText");
+
+function updateDisplay(){
+  if(!data) return;
+  coinDisplay.textContent="Coins: "+data.coins;
+  withdrawBtn.disabled = data.coins < MAX_COINS;
+  let percent=Math.min((data.coins/MAX_COINS)*100,100);
+  progressBar.style.width=percent+"%";
+  progressText.textContent=`${data.coins} / ${MAX_COINS} coins`;
+}
+
+function mine(){
+  if(!data) return;
+  data.coins += 10;
+  localStorage.setItem(currentUser, JSON.stringify(data));
+  updateDisplay();
+}
+coinImg.addEventListener("click", mine);
+
+// Withdraw
+withdrawBtn.addEventListener("click", ()=>{
+  if(!data) return;
+  document.getElementById("modalUser").textContent = currentUser;
+  document.getElementById("withdrawModal").style.display = "flex";
+  data.coins = 0;
+  localStorage.setItem(currentUser, JSON.stringify(data));
+  updateDisplay();
+});
+function closeWithdrawModal(){ document.getElementById("withdrawModal").style.display = "none"; }
+function logout(){ currentUser=null; data=null; showPage('loginPage'); }
+
+// Fake comments
+function showComment(){
+  const div=document.createElement("div");
+  div.className="comment";
+  const user = usernames[Math.floor(Math.random()*usernames.length)];
+  const avatar = avatars[Math.floor(Math.random()*avatars.length)];
+  let msg = messages[Math.floor(Math.random()*messages.length)];
+  msg = msg.replace("{amount}", Math.floor(Math.random()*40000+1000));
+  div.innerHTML = `<img src="${avatar}" alt="pfp"> ${user}: ${msg}`;
+  document.getElementById("commentOverlay").appendChild(div);
+  setTimeout(()=>div.remove(),3000);
+}
+setInterval(showComment,2000);
+</script>
+</body>
+</html>
